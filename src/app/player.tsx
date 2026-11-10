@@ -34,6 +34,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { CACHED_COVER, COVER, canGoIntoPlaylist, songCoverUrl, star, unstar, type Song } from '@/api/data';
 import { episodeHeart, heartedSong, togglePodcastHeart } from '@/api/podcasts';
+import { AmbientGlow } from '@/components/AmbientGlow';
 import { ArtistPlayerCard } from '@/components/ArtistPlayerCard';
 import { AudioQualityBadge } from '@/components/AudioQualityBadge';
 import { SeekBar } from '@/components/SeekBar';

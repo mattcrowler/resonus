@@ -1,6 +1,7 @@
 /** Spotify-style Home: quick access tiles + album carousels. */
 import Icon from '@/components/Icon';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { useEffect, useMemo, useReducer, useState } from 'react';
 import {
@@ -13,7 +14,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   COVER,
@@ -38,6 +38,7 @@ import {
 } from '@/api/podcasts';
 import { AlbumCard } from '@/components/AlbumCard';
 import { AlbumCardsSkeleton } from '@/components/AlbumCardsSkeleton';
+import { AmbientGlow } from '@/components/AmbientGlow';
 import { ArtistCard } from '@/components/ArtistCard';
 import { PlayingElsewhereCard } from '@/components/PlayingElsewhereCard';
 import { Cover } from '@/components/Cover';
@@ -48,6 +49,7 @@ import { PlaylistCard } from '@/components/PlaylistCard';
 import { PodcastEpisodeCard } from '@/components/PodcastEpisodeCard';
 import { RadioCard } from '@/components/RadioCard';
 import { TrackRow } from '@/components/TrackRow';
+import { useInsets } from '@/hooks/useInsets';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
 import { episodeUnavailable } from '@/hooks/useEpisodeUnavailable';
 import { columnsFor, useScreenSize } from '@/hooks/useScreenSize';

@@ -3,6 +3,7 @@
  * play/pause button; tapping it opens the player.
  */
 import Icon from '@/components/Icon';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -58,10 +59,18 @@ function MiniProgress({ song }: { song: Song }) {
   const positionSec = usePlayerStore((s) => s.positionSec);
   const durationSec = usePlayerStore((s) => s.durationSec);
   const duration = durationSec || song.duration || 0;
-  const progress = duration > 0 ? Math.min(1, positionSec / duration) : 0;
+  const pct = duration > 0 ? Math.min(100, Math.max(0, (positionSec / duration) * 100)) : 0;
   return (
-    <View style={styles.progressTrack} pointerEvents="none">
-      <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+    <View style={styles.progressWrap} pointerEvents="none">
+      <View style={styles.progressTrack}>
+        <LinearGradient
+          colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={[styles.progressFill, { width: `${pct}%` }]}
+        />
+      </View>
+      <View style={[styles.progressThumb, { left: `${pct}%` }]} />
     </View>
   );
 }
