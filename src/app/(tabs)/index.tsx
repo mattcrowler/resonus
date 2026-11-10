@@ -1078,6 +1078,8 @@ export default function HomeScreen() {
     if (serverUnreachable) checkAutoUrlNow();
   }, [serverUnreachable]);
 
+  const insets = useInsets();
+
   async function onRefresh() {
     setRefreshing(true);
     await queryClient.invalidateQueries();
@@ -1086,7 +1088,8 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={[styles.safe, { paddingTop: insets.top }]}>
+      <AmbientGlow height={340} />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
         refreshControl={
@@ -1097,43 +1100,49 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Scrolls away with the rest: pinned, it only took room. */}
         <View style={styles.topHeader}>
-          <View style={styles.header}>
-            {/* `flexShrink` and `numberOfLines`: the greeting is customizable,
-                and although the setting caps it at GREETING_MAX, those characters
-                measure differently depending on the chosen font. Shrinking and
-                trimming, no text can push the buttons off-screen. */}
-            <View style={styles.headerLeft}>
-              {/* Nothing beside the greeting in the local profile. There used to
-                  be a phone in the accent colour here, and it was the one thing
-                  on the screen saying which profile you were in. That is the
-                  trouble with it: the local profile is not a state you are
-                  waiting to come out of, it is where somebody has chosen to be,
-                  and a permanent badge for it is decoration. Offline is a
-                  different matter and still says so, on the right. */}
-              {/* The screen's name when there is no greeting, where Explore and
-                  Your library have theirs. */}
-              <Text style={styles.greeting} numberOfLines={1}>
-                {showGreeting ? greeting : t('Home')}
-              </Text>
-            </View>
+          <View style={styles.headerActionsBar}>
+            <View style={{ flex: 1 }} />
             <View style={styles.headerRight}>
-              {/* Before the buttons, and dimmer than them, so it reads as a state
-                  and not as something to press. */}
               <OfflineIndicator />
-              {/* In the order the user put them in, and only the ones left on
-                  (Settings › Appearance › Home buttons). */}
               {homeButtons.map(({ key, enabled }) =>
                 enabled ? <HomeHeaderButton key={key} which={key} /> : null,
               )}
             </View>
           </View>
 
+          <View style={styles.heroBlock}>
+            <Text style={styles.heroTitle} numberOfLines={2}>
+              {customGreeting.trim()
+                ? customGreeting.trim().toUpperCase()
+                : `${t('Explore').toUpperCase()}\n${t('Songs').toUpperCase()}`}
+            </Text>
+            <Text style={styles.heroSubtitle} numberOfLines={2}>
+              {showGreeting ? greeting : t('Home')}
+            </Text>
+          </View>
+
+          <Pressable
+            style={styles.heroSearchBar}
+            accessibilityRole="search"
+            accessibilityLabel={t('Search')}
+            onPress={() => router.navigate('/(tabs)/search')}
+          >
+            <Text style={styles.heroSearchPlaceholder} numberOfLines={1}>
+              {t('Songs, albums, artists…')}
+            </Text>
+            <LinearGradient
+              colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+              start={{ x: 0.15, y: 0.1 }}
+              end={{ x: 0.85, y: 0.9 }}
+              style={styles.heroSearchCircle}
+            >
+              <Icon name="search" size={18} color="#FFFFFF" />
+            </LinearGradient>
+          </Pressable>
+
           {offline && scanning ? <ScanningPanel /> : null}
         </View>
-        {/* First, above the chips: what was playing on the computer is the
-            thing to pick up on opening the app, when there is one. */}
         {showPlayingElsewhere ? <PlayingElsewhereCard /> : null}
         <HomeChips offline={offline} />
         {!offline && serverUnreachable ? (
@@ -1145,12 +1154,7 @@ export default function HomeScreen() {
           <>
             {showQuickGrid ? <QuickGrid /> : null}
 
-            {/* Toggleable and reorderable rows (Settings → Personalization →
-                Home sections). «Recently played» doesn't exist offline. */}
             {homeSections.map((s) => {
-              // «Discover» depends on server history (recent with offset):
-              // not applicable offline. «Recently played» does: the local
-              // history records just the same in that mode.
               if (!s.enabled) return null;
               if (s.key === 'discover' && offline) return null;
               if (s.key === 'discover') {
@@ -1158,9 +1162,6 @@ export default function HomeScreen() {
                   <DiscoverSection key={s.key} title={t('Discover')} reshuffleKey={reshuffleKey} />
                 );
               }
-              // The radios build on first show (a handful of requests) and
-              // are kept afterwards, so nothing here waits on the server
-              // beyond what a local profile can answer for itself.
               if (s.key === 'radios') {
                 if (!radiosEnabled) return null;
                 return (
@@ -1179,7 +1180,6 @@ export default function HomeScreen() {
               if (s.key === 'playlists') {
                 return <PlaylistsSection key={s.key} title={t('Playlists')} />;
               }
-              // Not gated on the server: the episodes are local.
               if (s.key === 'podcasts') {
                 return <PodcastEpisodesSection key={s.key} title={t('Recent episodes')} />;
               }
@@ -1195,14 +1195,21 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = themed((colors) => ({
   safe: { flex: 1, backgroundColor: colors.background },
-  topHeader: { paddingTop: spacing.md },
+  topHeader: { paddingTop: spacing.xs },
   content: { paddingBottom: spacing.md },
+  headerActionsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    minHeight: 28,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1211,11 +1218,57 @@ const styles = themed((colors) => ({
     marginBottom: spacing.lg,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
-  greeting: { color: colors.text, fontSize: fontSize.xxl, letterSpacing: tracking.display, fontWeight: '400', flexShrink: 1 },
+  greeting: { color: colors.text, fontSize: fontSize.xxl, letterSpacing: tracking.display, fontWeight: '700', flexShrink: 1 },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  heroBlock: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  heroTitle: {
+    color: colors.text,
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: 1.6,
+    lineHeight: 32,
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
+  heroSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 46,
+    marginHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+    paddingLeft: spacing.lg,
+    paddingRight: 5,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.highlight,
+  },
+  heroSearchPlaceholder: {
+    flex: 1,
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+  },
+  heroSearchCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipsRow: { flexGrow: 0, marginBottom: spacing.lg },
   chips: { gap: spacing.sm, paddingHorizontal: spacing.lg },
@@ -1223,12 +1276,12 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceHighlight,
   },
-  chipText: { color: colors.text, fontSize: fontSize.sm, fontWeight: '500' },
+  chipText: { color: colors.text, fontSize: fontSize.xs, fontWeight: '600' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1241,22 +1294,18 @@ const styles = themed((colors) => ({
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surface,
-    // md with Round; with Pointier a little over its small step.
     borderRadius: restyled(radius.md, radius.sm + 1),
     overflow: 'hidden',
     paddingRight: spacing.sm,
   },
-  /** Square with Round (the tile's own corners round it); Pointier rounds it a little. */
   tileCover: { borderRadius: restyled(0, radius.sm + 1) },
   tileText: {
     flex: 1,
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   section: { marginBottom: spacing.xl },
-  // Same shape as the artist's shelves: title on the left, the way in on the
-  // right, and the whole row pressable.
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1264,8 +1313,14 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  sectionHeaderTitle: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
-  showAll: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
+  sectionHeaderTitle: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  showAll: { color: colors.textSecondary, fontSize: fontSize.xs, fontWeight: '600' },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1274,13 +1329,13 @@ const styles = themed((colors) => ({
     marginBottom: spacing.md,
   },
   sectionTitleInRow: { paddingHorizontal: 0, marginBottom: 0 },
-  // The radios on screen while new ones are made over them.
   rebuilding: { opacity: 0.45 },
   sectionTitle: {
     color: colors.text,
-    fontSize: fontSize.lg,
-    letterSpacing: tracking.heading,
-    fontWeight: '500',
+    fontSize: fontSize.sm,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },

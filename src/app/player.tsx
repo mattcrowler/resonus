@@ -1274,6 +1274,10 @@ export default function PlayerScreen() {
             <View style={styles.coverScrim} />
           </>
         ) : null}
+        {/* Ambient warm top glow inspired by the reference player */}
+        {!fullBleed ? (
+          <AmbientGlow topColor={dominant ?? undefined} height={420} />
+        ) : null}
         {/* Only the lower half, where the controls are: the top is left to
             the cover's colour. */}
         <LinearGradient
@@ -1320,32 +1324,19 @@ export default function PlayerScreen() {
           style={{
             // The peek's room is kept for every song that could have lyrics, not
             // only for the ones that turn out to have them (`showsLyricsCard`).
-            // Tying it to the actual lyrics moved the whole player: skipping
-            // through a queue where some songs have lyrics and some don't, the
-            // cover resized and the title, the slider and the controls slid up
-            // and down a peek's worth on every track. Everything is at the same
-            // height now, whoever is playing.
-            //
-            // The cost is the strip of empty background under a song with no
-            // lyrics. That is the same trade as before, taken the other way: the
-            // gap is quiet, the layout jumping on every skip is not. A radio,
-            // with no lyrics ever, keeps the room as well (`cardRoom`).
+            // In landscape mode, omit LYRICS_PEEK so the right column has full height.
             height:
-              (pageH || approxPageH) - (cardRoom ? LYRICS_PEEK : 0),
+              (pageH || approxPageH) - (cardRoom && !landscape ? LYRICS_PEEK : 0),
           }}
         >
         <View style={styles.topBar} onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
-          <CircleButton color={headerInk} name="chevron-down" label={t('Close')} onPress={() => router.back()} />
+          <CircleButton color={headerInk} name="chevron-back" label={t('Close')} onPress={() => router.back()} />
           <Pressable
             style={styles.topTitleWrap}
             disabled={!canOpenSource}
             accessibilityRole={canOpenSource ? 'button' : undefined}
             onPress={() => {
               if (!canOpenSource) return;
-              // The queue goes on top of the player, like its own button does:
-              // you are looking at where this song sits, not leaving for
-              // another screen. Anywhere else replaces the player, since the
-              // album or the playlist is somewhere to stay.
               if (queuedNow) {
                 pushOnce('/queue');
                 return;
@@ -1365,26 +1356,7 @@ export default function PlayerScreen() {
               <Text style={[styles.topTitle, { color: headerInk }]}>{t('NOW PLAYING')}</Text>
             )}
           </Pressable>
-          {/* Both of these used to sit behind `song.localUri && !offline`, meant
-              to read as "the phone's own library, which has no server to favourite
-              against or open a menu on". It never read as that. `markUnplayableOffline`
-              puts `localUri` on every downloaded song in a list built offline, so a
-              server song carries it too and the queue is saved with it on; that is
-              what the `&& !offline` was patched in for when the ⋯ went missing
-              offline. What it left is the same thing the other way round: a queue
-              built offline, the network back, `offline` false and the mark still
-              there — and then the corner button and the one under the title both
-              disappear, together, for as long as those songs are queued. Nothing
-              takes the mark off, so closing the player and opening it again shows
-              exactly the same thing.
-
-              There is no condition left because there was never a real one: the
-              phone's own library is a profile with no account, and that profile is
-              always in offline mode (see `switchProfile`), so the old test could
-              only ever be true about a song it was wrong about. */}
           {swapButtons ? (
-            // Swapped: the heart takes the corner. It only reports state here —
-            // tapping it still works, it's just the awkward spot to reach.
             <View style={styles.topFavorite}>
               <FavoriteButton
                 id={song.id}
@@ -1395,17 +1367,10 @@ export default function PlayerScreen() {
               />
             </View>
           ) : (
-            <CircleButton color={headerInk} name="ellipsis-horizontal" label={t('More options')} onPress={() => openMenu(song, undefined, menuOptions())} />
+            <CircleButton color={headerInk} name="ellipsis-vertical" label={t('More options')} onPress={() => openMenu(song, undefined, menuOptions())} />
           )}
         </View>
 
-        {/* Side by side once the screen is wider than it is tall: the cover
-            takes the left and everything that is not the cover takes the
-            right. Stacked, a phone lying on its side has some 330 points of
-            height for a square picture AND a title AND a slider AND the
-            controls, and what happens is that the controls go off the bottom
-            of a page that cannot scroll. In portrait this is one more box
-            around what was already a column, and nothing moves (#131). */}
         <View style={landscape ? styles.pageColumns : styles.pageStack}>
         <View
           style={[
@@ -1414,9 +1379,6 @@ export default function PlayerScreen() {
             {
               paddingTop: fullBleed ? 0 : coverTopPad,
               ...(fullBleed ? { marginTop: 0 } : {}),
-              // Side by side the cover is the thing that reaches the bottom
-              // edge, and the navigation bar is down there: in a column it was
-              // the block of controls that kept clear of it for both.
               paddingBottom: landscape ? insets.bottom + spacing.md : 0,
             },
           ]}
@@ -1427,12 +1389,16 @@ export default function PlayerScreen() {
           }}
         >
           <GestureDetector gesture={coverGesture}>
-            {/* Recycled carousel: the current cover centered and the neighbors at
-                one screen, already entering on drag. No fade (transition 0): a
-                panel's content only changes off-screen and a fade is pointless
-                here. An animated cover is not here at all: it is the background,
-                and the empty slot it leaves is what the picture shows through. */}
             <Animated.View style={[{ width: fullBleed ? screenW - insets.left - insets.right : coverSize, height: fullBleed ? Math.max(coverSize, coverBoxH - starsBlock) : coverSize }, coverAppearStyle]}>
+              {!fullBleed && !inlineLyrics && !isAnimatedCover && !animatedVideoBackground ? (
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.coverFrame,
+                    { borderRadius: coverCorner + 8 },
+                  ]}
+                />
+              ) : null}
               {!fullBleed && !isAnimatedCover && !animatedVideoBackground ? (
                 paneStyles.map((paneStyle, k) => {
                   const rel = paneRel(k);
@@ -1440,8 +1406,6 @@ export default function PlayerScreen() {
                   const paneCover = rel === 0 ? cover : rel === 1 ? nextCover : prevCover;
                   return (
                     <Animated.View key={k} style={[styles.coverPane, paneStyle]}>
-                      {/* With lyrics in place the cover is hidden: the lyrics
-                          (transparent background) sit on top of the player background. */}
                       {paneSong && !inlineLyrics ? (
                         <>
                         <Cover
@@ -1449,9 +1413,6 @@ export default function PlayerScreen() {
                           size={coverSize}
                           contentFit={fitCoverArt ? 'contain' : 'cover'}
                           transition={0}
-                          // An endpoint clip provides the motion: a webp
-                          // underneath stays a still poster instead of playing
-                          // a second animation behind (or through) it.
                           autoplay={rel === 0 && !animatedClips?.square}
                           onAnimatedDetected={rel === 0 ? onCoverLoad : undefined}
                           placeholderIcon={paneSong.url ? 'radio' : 'musical-notes'}
@@ -1471,20 +1432,12 @@ export default function PlayerScreen() {
               ) : null}
             </Animated.View>
           </GestureDetector>
-          {/* Lyrics in place of the cover (setting): same frame, on top. */}
           {inlineLyrics && canLyrics ? (
             <View style={[styles.lyricsOverlay, { height: coverSize }]}>
               <CoverLyrics size={coverSize} onClose={() => setInlineLyrics(false)} />
             </View>
           ) : null}
-          {/* Inside the slot and right after the cover, so it hangs from the
-              artwork instead of from the title: the spare height falls below
-              both. Its measured height is discounted from `coverSize`. */}
           {canRate ? (
-            // Faded in with the cover, not before it: it is measured on the
-            // first pass whatever its opacity, and showing it while the cover
-            // above it is still resolving is what put the stars on screen at
-            // one height and then moved them.
             <Animated.View
               style={[styles.belowCover, { marginTop: fullBleed ? STARS_GAP_MIN : starsGap }, coverAppearStyle]}
               onLayout={(e) => setStarsH(e.nativeEvent.layout.height)}
@@ -1499,27 +1452,16 @@ export default function PlayerScreen() {
           ) : null}
         </View>
 
-        {/* The bottom inset is kept here rather than on the page: the
-            scroll has to reach the bottom edge for the lyrics card, and it is
-            this block, the last thing on the first page, that must not end up
-            under the navigation bar. */}
         <View
           style={[
             styles.bottom,
             landscape && styles.bottomColumn,
-            // With no card peeking below, the row of buttons would sit on the
-            // navigation bar; the room comes out of the spare height above.
-            // Over a card it sits close to it and a little further from the
-            // controls, which is what reads as one row belonging to the card's
-            // edge rather than to the controls (#259).
             {
               paddingBottom: insets.bottom + (cardRoom ? 0 : spacing.xl),
             },
           ]}
         >
           <View style={styles.meta}>
-            {/* With the cover on the wall behind, a still copy of it sits by
-                the title, the height of the two lines of text. */}
             {artworkLayout === 'background' && (isAnimatedCover || animatedVideoBackground) && cover ? (
               <Cover
                 uri={cover}
@@ -1530,7 +1472,7 @@ export default function PlayerScreen() {
                 placeholderIcon={song?.url ? 'radio' : 'musical-notes'}
               />
             ) : null}
-            <View style={{ flex: 1 }}>
+            <View style={styles.metaCenter}>
               {song.albumId ? (
                 <Pressable
                   style={styles.tapText}
@@ -1540,7 +1482,9 @@ export default function PlayerScreen() {
                   <MarqueeText text={title} style={styles.title} enabled={marqueeTitles} />
                 </Pressable>
               ) : (
-                <MarqueeText text={title} style={styles.title} enabled={marqueeTitles} />
+                <View style={styles.tapText}>
+                  <MarqueeText text={title} style={styles.title} enabled={marqueeTitles} />
+                </View>
               )}
               {(() => {
                 const targets = artistTargets(song);
@@ -1556,9 +1500,6 @@ export default function PlayerScreen() {
                   : undefined;
                 return (
                   <>
-                    {/* The badge sits beside the artist and not the title: the
-                        title is a marquee, and anything sharing a row with it
-                        would be dragged along by the scroll. */}
                     <View style={styles.artistRow}>
                       <ExplicitBadge status={song.explicitStatus} />
                       <Text
@@ -1570,13 +1511,6 @@ export default function PlayerScreen() {
                         {artistName}
                       </Text>
                     </View>
-                    {/* Its own line: next to the artist the two ran together and
-                        the album was hard to pick out. It scrolls like the
-                        title does, since the year sits at the end of it and a
-                        long album name was all anyone ever saw (#183). */}
-                    {/* Kept, empty, for a song with neither album nor year: the
-                        cover takes what the block leaves, and a line that came
-                        and went per song resized it on the skip. */}
                     {albumInfo ? (
                       goAlbum ? (
                         <Pressable style={styles.albumLine} hitSlop={6} onPress={goAlbum}>
@@ -1604,6 +1538,10 @@ export default function PlayerScreen() {
                 );
               })()}
             </View>
+          </View>
+
+          {/* Reference player action bar right above SeekBar: Heart on left, Audio/Volume on right */}
+          <View style={styles.preSeekRow}>
             {swapButtons ? (
               <CircleButton
                 name="ellipsis-horizontal"
@@ -1615,35 +1553,42 @@ export default function PlayerScreen() {
                 id={song.id}
                 starred={favorited}
                 podcast={podcastHeart}
-                size={26}
+                size={22}
                 hold={openPlaylistSheet}
               />
             )}
+            {showQualityBadge ? (
+              <View style={styles.subInfoInline}>
+                <AudioQualityBadge song={song} />
+              </View>
+            ) : <View />}
+            <Pressable
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('Output device')}
+              onPress={() => setOutputOpen(true)}
+            >
+              <Icon
+                name="volume-medium-outline"
+                size={22}
+                color={casting ? colors.accent : colors.textSecondary}
+              />
+            </Pressable>
           </View>
 
-          {showQualityBadge ? (
-            <View style={styles.subInfo}>
-              <AudioQualityBadge song={song} />
-            </View>
-          ) : null}
-
-          {/* Its own component so a position tick does not repaint this one,
-              which is large: cover, gradient, quality badge, controls, queue
-              sheet (#50). The seek buttons read the position when they are
-              pressed instead of subscribing to it. */}
-          <SeekBar duration={duration} style={styles.progress} tint={playFill} />
+          <SeekBar duration={duration} style={styles.progress} />
 
           <View style={styles.controls}>
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Shuffle')}
-              onPress={toggleShuffle}
+              accessibilityLabel={t('Repeat')}
+              onPress={cycleRepeat}
             >
               <Icon
-                name="shuffle"
-                size={26}
-                color={shuffle ? colors.accent : ink}
+                name={repeat === 'one' ? 'repeat-outline' : 'repeat'}
+                size={23}
+                color={repeatActive ? colors.accent : colors.textSecondary}
               />
             </Pressable>
             <Pressable
@@ -1652,7 +1597,7 @@ export default function PlayerScreen() {
               accessibilityLabel={t('Previous')}
               onPress={previous}
             >
-              <Icon name="play-skip-back" size={34} color={ink} />
+              <Icon name="play-skip-back" size={30} color={ink} />
             </Pressable>
             {seekButtonsSec > 0 ? (
               <Pressable
@@ -1667,20 +1612,16 @@ export default function PlayerScreen() {
               >
                 <MaterialIcons
                   name={`replay-${seekButtonsSec}` as 'replay-10'}
-                  size={28}
+                  size={26}
                   color={ink}
                 />
               </Pressable>
             ) : null}
             <Pressable
-              style={[styles.playButton, { backgroundColor: playFill }]}
+              style={styles.playButtonWrap}
               accessibilityRole="button"
               accessibilityLabel={isPlaying ? t('Pause') : t('Play')}
               onPress={toggle}
-               // Real stop: stops and clears queue, mini player and
-               // notification. No need to close the player manually: the
-               // "no song" effect already closes it, and the Undo toast stays
-               // on the screen underneath.
               onLongPress={() => {
                 haptic('medium');
                 void usePlayerStore
@@ -1692,22 +1633,23 @@ export default function PlayerScreen() {
                   });
               }}
             >
-              {/* Phosphor's play triangle is not centred in its own box: it is
-                  drawn from 256 to 960 of a 1024-unit em, so the tip almost
-                  touches the right edge while the base sits a quarter of the
-                  way in. Centred as it comes, the icon still reads as pushed
-                  right, so the box itself moves left - padding on the right,
-                  the only side with room to take it. */}
-              {isBuffering ? (
-                <ActivityIndicator size="small" color={playInk} />
-              ) : (
-                <Icon
-                  name={isPlaying ? 'pause' : 'play'}
-                  size={34}
-                  color={playInk}
-                  style={!isPlaying && { paddingRight: 4.5 }}
-                />
-              )}
+              <LinearGradient
+                colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+                start={{ x: 0.15, y: 0.1 }}
+                end={{ x: 0.85, y: 0.9 }}
+                style={styles.playButton}
+              >
+                {isBuffering ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Icon
+                    name={isPlaying ? 'pause' : 'play'}
+                    size={30}
+                    color="#FFFFFF"
+                    style={!isPlaying && { paddingRight: 4 }}
+                  />
+                )}
+              </LinearGradient>
             </Pressable>
             {seekButtonsSec > 0 ? (
               <Pressable
@@ -1715,8 +1657,6 @@ export default function PlayerScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={t('Forward {n} seconds', { n: seekButtonsSec })}
                 onPress={() =>
-                  // Cap before the end: skipping past didJustFinish manually
-                  // would leave auto-advance without triggering.
                   seekTo(
                     duration > 0
                       ? Math.min(duration - 1, usePlayerStore.getState().positionSec + seekButtonsSec)
@@ -1726,7 +1666,7 @@ export default function PlayerScreen() {
               >
                 <MaterialIcons
                   name={`forward-${seekButtonsSec}` as 'forward-10'}
-                  size={28}
+                  size={26}
                   color={ink}
                 />
               </Pressable>
@@ -1737,44 +1677,49 @@ export default function PlayerScreen() {
               accessibilityLabel={t('Next')}
               onPress={next}
             >
-              <Icon name="play-skip-forward" size={34} color={ink} />
+              <Icon name="play-skip-forward" size={30} color={ink} />
             </Pressable>
             <Pressable
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={t('Repeat')}
-              onPress={cycleRepeat}
+              accessibilityLabel={t('Shuffle')}
+              onPress={toggleShuffle}
             >
               <Icon
-                name={repeat === 'one' ? 'repeat-outline' : 'repeat'}
-                size={26}
-                color={repeatActive ? colors.accent : ink}
+                name="shuffle"
+                size={23}
+                color={shuffle ? colors.accent : colors.textSecondary}
               />
             </Pressable>
           </View>
 
-          {/* Grouped in the middle, each one where it always is: one that
-              cannot do anything for this song is dimmed rather than taken out,
-              so the others do not move from song to song. */}
           <View
             style={[
               styles.bottomRow,
               (spreadButtons || splitRow) && styles.bottomRowSpread,
-              // Set a little apart from the controls, in the room the padding
-              // below gave up.
-              { marginTop: cardRoom ? spacing.lg : spacing.xl },
+              { marginTop: cardRoom ? spacing.md : spacing.lg },
             ]}
           >
-            {splitRow ? (
-              <>
-                {bottomButton({ key: 'devices', enabled: true })}
-                <View style={styles.bottomRight}>
-                  {playerButtons.filter((b) => b.key !== 'devices').map(bottomButton)}
-                </View>
-              </>
-            ) : (
-              playerButtons.map(bottomButton)
-            )}
+            {playerButtons.filter((b) => b.key !== 'lyrics' && b.key !== 'devices').slice(0, 1).map(bottomButton)}
+            <Pressable
+              style={[styles.lyricsPullUp, !canLyrics && styles.bottomButtonOff]}
+              disabled={!canLyrics}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('Lyrics')}
+              onPress={() => pushOnce('/lyrics')}
+              onLongPress={() => {
+                if (!canLyrics) return;
+                haptic('light');
+                setInlineLyrics((v) => !v);
+              }}
+            >
+              <Icon name="chevron-up" size={20} color={inlineLyrics ? colors.accent : colors.text} />
+              <Text style={[styles.lyricsPullLabel, inlineLyrics && { color: colors.accent }]}>
+                {t('Lyrics')}
+              </Text>
+            </Pressable>
+            {playerButtons.filter((b) => b.key !== 'lyrics' && b.key !== 'devices').slice(1).map(bottomButton)}
           </View>
         </View>
         </View>
@@ -1792,11 +1737,7 @@ export default function PlayerScreen() {
 
 const styles = themed((colors) => ({
   root: { flex: 1, backgroundColor: colors.background },
-  // Darkens the blurred artwork so the white text keeps its contrast whatever
-  // the cover is. Tuned by eye: any lighter and pale covers wash the title out.
   coverScrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.coverWash },
-  // Horizontal padding lives in each section (not here): so the slider can
-  // overshoot its internal margin without the ScrollView clipping the thumb.
   safe: { flex: 1 },
   topBar: {
     flexDirection: 'row',
@@ -1818,57 +1759,43 @@ const styles = themed((colors) => ({
   },
   topTitle: {
     color: colors.text,
-    fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontSize: fontSize.xs,
+    fontWeight: '600',
     letterSpacing: 1.5,
   },
   topLabel: {
     color: colors.textSecondary,
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
     letterSpacing: 1.2,
   },
   topSource: {
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  // The elastic slot: takes whatever the rest leaves over, and `coverSize` is
-  // measured from here. `minHeight: 0` so it can actually shrink.
-  // `flex-start` plus a computed `paddingTop` instead of `center`: this way the
-  // split of the spare height is ours to decide (see COVER_TOP_SHARE) rather
-  // than a fixed 50/50, which left too big a hole above the cover.
   coverWrap: {
     flex: 1,
     minHeight: 0,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
   },
-  /** Everything under the top bar, stacked, which is what it has always been. */
+  coverFrame: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.11)',
+  },
   pageStack: { flex: 1, minHeight: 0 },
-  /** And the same two blocks turned into columns (#131). */
   pageColumns: { flex: 1, minHeight: 0, flexDirection: 'row', alignItems: 'stretch' },
-  /** The cover's half: it no longer hangs from the top, it sits in the middle
-   *  of its own column, and the split of the spare height above and below
-   *  (`coverTopPad`) does the rest. */
   coverColumn: { marginTop: 0, justifyContent: 'center' },
-  /**
-   * And the other half, with what is left of it centred: a title and a slider
-   * pinned to the bottom of a short screen read as an afterthought.
-   *
-   * It stops growing well before the column does. Across half a tablet the
-   * shuffle and the repeat end up a forearm apart with the play button alone
-   * in the middle, which is not a set of controls, it is five buttons that
-   * happen to be on the same line.
-   */
   bottomColumn: { flex: 1, justifyContent: 'center', maxWidth: 560, alignSelf: 'center' },
-  // Carousel panels are absolute (usePaneStyle positions them); the row that
-  // reserves the cover art slot is sized inline, since it's dynamic now.
   coverPane: { position: 'absolute', top: 0, left: 0 },
-  // Lyrics overlay on top of the cover frame: same height (set inline, it
-  // follows the cover) and horizontally centered (coverWrap is wider than the
-  // cover; without this the lyrics would be left-aligned).
   lyricsOverlay: {
     position: 'absolute',
     top: 0,
@@ -1876,9 +1803,6 @@ const styles = themed((colors) => ({
     right: 0,
     alignItems: 'center',
   },
-  // Natural height (no `flex: 1`): the slack goes to `coverWrap`, which is what
-  // gives it up when the options don't fit. `paddingBottom` is overridden at
-  // the call site to add the safe area on top of it.
   bottom: {
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.xl,
@@ -1886,78 +1810,95 @@ const styles = themed((colors) => ({
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.md,
     marginBottom: spacing.md,
   },
-  // The tappable area fits the text (not the full width), to avoid navigating
-  // when tapping the empty space on the right.
-  // Hugs the text: the tappable area is just the title/artist, not the row.
-  tapText: { alignSelf: 'flex-start', maxWidth: '100%' },
-  title: { color: colors.text, fontSize: fontSize.xl, letterSpacing: tracking.title, fontWeight: '500' },
-  // The gap the artist line used to keep for itself now belongs to the row it
-  // shares with the badge, so the two line up on their middles.
+  metaCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  tapText: { alignSelf: 'center', maxWidth: '100%' },
+  title: {
+    color: colors.text,
+    fontSize: 22,
+    letterSpacing: tracking.title,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   artistRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    marginTop: spacing.xs,
+    marginTop: 6,
   },
-  // In the text colour, so artist and album are two steps and not one grey.
   artist: {
-    color: colors.text,
-    fontSize: fontSize.md,
-    flexShrink: 1,
-  },
-  // The gap belongs to the line and not to the text: the text is handed to a
-  // marquee, which draws it twice.
-  albumLine: { alignSelf: 'flex-start', maxWidth: '100%', marginTop: 2 },
-  // A step below the artist by size, so the three lines read as a hierarchy
-  // (title → artist → album). The muted grey was lost over the backdrop.
-  album: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
+    fontWeight: '500',
+    flexShrink: 1,
+    textAlign: 'center',
   },
-  subInfo: { marginTop: -spacing.sm, marginBottom: spacing.xs },
-  progress: { marginBottom: spacing.xs },
+  albumLine: { alignSelf: 'center', maxWidth: '100%', marginTop: 2 },
+  album: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+  },
+  preSeekRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  subInfoInline: { alignItems: 'center' },
+  subInfo: { marginTop: -spacing.sm, marginBottom: spacing.xs, alignItems: 'center' },
+  progress: { marginBottom: spacing.sm },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  playButtonWrap: {
+    shadowColor: colors.accentGradientEnd,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.42,
+    shadowRadius: 14,
+    elevation: 8,
   },
   playButton: {
-    backgroundColor: colors.text,
-    width: 72,
-    height: 72,
+    width: 68,
+    height: 68,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Stars centered below the cover (optional element).
-  // Its top margin is the even share worked out with `coverTopPad`.
   belowCover: { alignItems: 'center' },
-  // Same footprint as the CircleButton it replaces when swapped, so the
-  // centered title doesn't shift.
   topFavorite: { width: 40, alignItems: 'center', justifyContent: 'center' },
-  // A group in the middle, or (setting) spread to the edges.
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xxl,
-    paddingHorizontal: spacing.sm,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
     marginTop: spacing.xs,
   },
-  // Edge to edge like the controls above, so the outer icons sit under the
-  // shuffle and the repeat instead of a step further in (#259).
   bottomRowSpread: { justifyContent: 'space-between', gap: 0, paddingHorizontal: 0 },
-  /** The right-hand group of the split row: devices alone on the left. */
   bottomRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xl, flexShrink: 0 },
-  // Like Spotify Connect: icon + device name in accent when casting.
-  // The same box as the other buttons in the row; only the device name, while
-  // casting, makes it wider, and it is capped so the row stays centred. With
-  // every button on and a long name it is the one that gives way, the name
-  // cut short, instead of pushing the row past both edges of the screen.
+  lyricsPullUp: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.md,
+  },
+  lyricsPullLabel: {
+    color: colors.text,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
   deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1980,8 +1921,6 @@ const styles = themed((colors) => ({
     height: 40,
   },
   bottomButtonOff: { opacity: 0.35 },
-  // In the accent like the device name beside its own icon: it is a mode that
-  // is on, which is what the accent means everywhere else on this screen.
   speedText: {
     color: colors.accent,
     fontSize: fontSize.xs,

@@ -36,32 +36,26 @@ export function ExplicitBadge({ status }: { status?: string }) {
   return (
     <View style={styles.badge} accessibilityLabel={t('Explicit')}>
       <Text style={styles.letter} allowFontScaling={false}>
-        E
+        explicit
       </Text>
     </View>
   );
 }
 
 const styles = themed((colors) => ({
-  // A filled square rather than an outlined one: it has to read at 14 px next
-  // to text it must not compete with, and a hairline box that size turns to
-  // mush on a low-density screen.
   badge: {
-    width: 14,
-    height: 14,
+    paddingHorizontal: 6,
+    height: 16,
     borderRadius: radius.sm,
-    backgroundColor: colors.textMuted,
+    backgroundColor: colors.textSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // `allowFontScaling` off on the letter above: the box is a fixed size, and a
-  // reader with large text turned on would get an E cropped by its own badge.
   letter: {
     color: colors.background,
-    // Smaller than anything in the scale, because the box is smaller than
-    // anything the scale was written for.
-    fontSize: 9,
-    fontWeight: '600',
-    lineHeight: 14,
+    fontSize: 9.5,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    lineHeight: 13,
   },
 }));

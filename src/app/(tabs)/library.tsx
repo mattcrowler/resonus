@@ -43,6 +43,7 @@ import { Dialog } from '@/components/Dialog';
 import { EmptyState } from '@/components/EmptyState';
 import { FavoritesArt } from '@/components/FavoritesArt';
 import { Message } from '@/components/Message';
+import { AmbientGlow } from '@/components/AmbientGlow';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { useBottomSheetAnim } from '@/hooks/useBottomSheetAnim';
 import { usePressFeedback } from '@/hooks/usePressFeedback';
@@ -1414,6 +1415,7 @@ export default function LibraryScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
+      <AmbientGlow height={280} />
       {/* The screen's own chrome follows what it is over: with rows, it lines
           up with the centred column; with a grid, the grid fills the width and
           so does this (#131). */}
@@ -1569,7 +1571,7 @@ const styles = themed((colors) => ({
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
   },
-  heading: { color: colors.text, fontSize: fontSize.xxl, letterSpacing: tracking.display, fontWeight: '400' },
+  heading: { color: colors.text, fontSize: fontSize.xl, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   segments: {
     flexGrow: 0,
@@ -1652,13 +1654,13 @@ const styles = themed((colors) => ({
   cardCentered: { alignItems: 'center' },
   // Offline and not downloaded (a podcast episode): dim like a song row.
   dimmed: { opacity: DIM_OPACITY },
-  cardTitle: { color: colors.text, fontSize: fontSize.xs, lineHeight: lineHeight.xs, fontWeight: '500', marginTop: spacing.xs },
+  cardTitle: { color: colors.text, fontSize: fontSize.xs, lineHeight: lineHeight.xs, fontWeight: '700', marginTop: spacing.xs },
   centerText: { textAlign: 'center' },
   cardSub: { color: colors.textSecondary, fontSize: fontSize.xs, lineHeight: lineHeight.xs },
   cardSubLine: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowInfo: { flex: 1 },
-  rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
+  rowTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
   rowSub: { color: colors.textSecondary, fontSize: fontSize.xs },
   rowSubGap: { marginTop: 2 },
   // The MCI pin comes vertical; rotated 45° it looks like Spotify's.

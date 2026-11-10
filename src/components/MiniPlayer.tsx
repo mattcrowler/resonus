@@ -327,18 +327,20 @@ export function MiniPlayer({ active = true }: { active?: boolean }) {
 const styles = themed((colors) => ({
   card: {
     marginHorizontal: spacing.sm,
-    // lg with Round, a step down with Pointier.
     borderRadius: restyled(radius.lg, radius.md),
-    boxShadow: '0px 6px 16px rgba(0, 0, 0, 0.3)',
+    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.38)',
   },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surfaceHighlight,
-    padding: spacing.sm,
-    // lg with Round, a step down with Pointier.
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm + 4,
     borderRadius: restyled(radius.lg, radius.md),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.highlight,
     overflow: 'hidden',
   },
   pillOutline: {
@@ -347,22 +349,33 @@ const styles = themed((colors) => ({
     borderWidth: 0.5,
     borderColor: colors.highlight,
   },
-  /** Centred and no wider than a wide screen wants it. */
   narrow: { maxWidth: CONTENT_MAX_WIDTH, width: '100%', alignSelf: 'center' },
-  progressTrack: {
+  progressWrap: {
     position: 'absolute',
-    // 14 in from both sides with Round; with Pointier it lines up with the
-    // cover's own edges instead.
-    left: restyled(14, spacing.sm),
-    right: restyled(14, spacing.sm),
-    bottom: 0,
-    height: 3,
+    left: spacing.md,
+    right: spacing.md,
+    bottom: 3,
+    height: 10,
+    justifyContent: 'center',
+  },
+  progressTrack: {
+    height: 2.5,
     borderRadius: radius.pill,
     backgroundColor: colors.highlight,
     overflow: 'hidden',
   },
-  progressFill: { height: 3, borderRadius: radius.pill, backgroundColor: colors.text },
-  spinner: { width: 28, height: 28 },
+  progressFill: { height: '100%', borderRadius: radius.pill },
+  progressThumb: {
+    position: 'absolute',
+    marginLeft: -4.5,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: colors.background,
+  },
+  spinner: { width: 26, height: 26 },
   details: {
     flex: 1,
     flexDirection: 'row',
@@ -375,10 +388,11 @@ const styles = themed((colors) => ({
   title: {
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   artist: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
+    marginTop: 1,
   },
 }));

@@ -1,6 +1,6 @@
-/** Album and song search on the server. */
 import Icon from '@/components/Icon';
 import { useQuery } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COVER, coverArtUrl, getPlaylists, search } from '@/api/data';
 import { getRadioStations, type Album, type Artist } from '@/api/backend';
 import { AlbumCard } from '@/components/AlbumCard';
+import { AmbientGlow } from '@/components/AmbientGlow';
 import { Cover } from '@/components/Cover';
 import { EmptyState } from '@/components/EmptyState';
 import { Message } from '@/components/Message';
@@ -325,8 +326,8 @@ export default function SearchScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
+      <AmbientGlow height={280} />
       <View style={styles.searchBar}>
-        <Icon name="search" size={20} color={colors.textMuted} />
         <TextInput
           ref={inputRef}
           style={styles.input}
@@ -338,12 +339,24 @@ export default function SearchScreen() {
           onChangeText={setQuery}
           returnKeyType="search"
         />
-        {query.length > 0 ? (
-          <Pressable hitSlop={10} accessibilityLabel={t('Clear')} onPress={() => setQuery('')}>
-            <Icon name="close-circle" size={20} color={colors.textMuted} />
-          </Pressable>
-        ) : null}
         <OfflineIndicator />
+        <Pressable
+          hitSlop={10}
+          accessibilityLabel={query.length > 0 ? t('Clear') : t('Search')}
+          onPress={() => {
+            if (query.length > 0) setQuery('');
+            else inputRef.current?.focus();
+          }}
+        >
+          <LinearGradient
+            colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.searchCircleButton}
+          >
+            <Icon name={query.length > 0 ? 'close' : 'search'} size={18} color={colors.onAccent} />
+          </LinearGradient>
+        </Pressable>
       </View>
 
       {/* Only while something is being searched for. With the box empty this
@@ -628,17 +641,28 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     margin: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    paddingLeft: spacing.lg,
+    paddingRight: 6,
+    height: 48,
     // A capsule with Round, a rounded rectangle with Pointier.
     borderRadius: restyled(radius.pill, radius.md),
+  },
+  searchCircleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: fontSize.md,
-    paddingVertical: spacing.md,
+    fontSize: fontSize.sm,
+    paddingVertical: spacing.sm,
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -675,9 +699,10 @@ const styles = themed((colors) => ({
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: fontSize.lg,
-    letterSpacing: tracking.heading,
-    fontWeight: '500',
+    fontSize: fontSize.sm,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     marginBottom: spacing.md,
   },
   recentHeader: {
@@ -693,7 +718,7 @@ const styles = themed((colors) => ({
     paddingVertical: spacing.sm,
   },
   recentInfo: { flex: 1 },
-  recentTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '500' },
+  recentTitle: { color: colors.text, fontSize: fontSize.md, fontWeight: '700' },
   recentSub: { color: colors.textSecondary, fontSize: fontSize.xs, marginTop: 2 },
   albumRow: {
     gap: spacing.md,
@@ -711,7 +736,7 @@ const styles = themed((colors) => ({
   artistName: {
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '700',
     textAlign: 'center',
   },
 }));

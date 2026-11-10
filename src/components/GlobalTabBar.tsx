@@ -59,11 +59,11 @@ const ICONS: Record<string, 'home' | 'search' | 'library' | 'albums' | 'settings
  * on a pale screen. The alpha on each stop is the same in both.
  */
 const GRADIENT_DARK = [
-  'rgba(0,0,0,0)',
-  'rgba(0,0,0,0.45)',
-  'rgba(0,0,0,0.82)',
-  'rgba(0,0,0,0.97)',
-  'rgba(0,0,0,1)',
+  'rgba(18,20,32,0)',
+  'rgba(18,20,32,0.52)',
+  'rgba(18,20,32,0.86)',
+  'rgba(18,20,32,0.98)',
+  'rgba(18,20,32,1)',
 ] as const;
 const GRADIENT_LIGHT = [
   'rgba(255,255,255,0)',
@@ -177,7 +177,7 @@ export function GlobalTabBar() {
         />
       ) : null}
       {/* Where the glass starts, when something bright passes under it. */}
-      {blur && !pills ? <View pointerEvents="none" style={styles.edge} /> : null}
+      {!pills && navStyle !== 'gradient' ? <View pointerEvents="none" style={styles.edge} /> : null}
       {/* The user's order, and only the ones they kept (Settings › Navigation
           › Navigation bar). `TABS` stays the catalogue: it is what says where
           each one goes and what it is called. */}

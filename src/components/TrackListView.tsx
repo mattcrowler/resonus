@@ -70,13 +70,13 @@ import { DragTrackRow, TrackRow } from './TrackRow';
  * screen lying on its side, where 250 points of picture is most of the page
  * and the tracklist is what people came for (#131).
  */
-function coverSize(width: number, height: number): number {
-  return Math.round(Math.min(width * 0.58, height * 0.4, 250));
+function coverSize(_width: number, _height: number): number {
+  return 116;
 }
 export const TOPBAR_H = 48;
 /** The round play button in the header: its size, and the share of it the
  *  bar holds once it reaches the bar (half inside it, half below its edge). */
-const PLAY_SIZE = 56;
+const PLAY_SIZE = 44;
 /** Height of the hidden search bar ("Find in playlist" Spotify style),
  *  including the separation gap from the cover. */
 const SEARCH_H = 72;
@@ -1019,31 +1019,27 @@ export function TrackListView({
         <Animated.View style={{ transform: [{ translateY: searchH }] }}>
           <Animated.View style={{ opacity: dockOpacity, transform: [{ translateY: playDockY }] }}>
             <Pressable
-              style={[styles.playButton, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
               accessibilityLabel={t('Play')}
               onPress={() => songs.length > 0 && onPlay(0)}
             >
-              <Icon name="play" size={28} color={colors.onAccent} />
+              <LinearGradient
+                colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+                start={{ x: 0.15, y: 0.1 }}
+                end={{ x: 0.85, y: 0.9 }}
+                style={styles.playButton}
+              >
+                <Icon name="play" size={20} color="#FFFFFF" style={{ paddingRight: 2 }} />
+              </LinearGradient>
             </Pressable>
           </Animated.View>
         </Animated.View>
       </Animated.View>
     );
 
-  /**
-   * The header above the rows, taken out of the list so both list engines
-   *  mount it: it is the same furniture above the rows whichever way the
-   *  rows can be answered, and a drag surface without it would be a cover
-   *  and a title vanishing under the finger the moment the selection came
-   *  in.
-   */
   const listHeader = (
     <View>
       {searchBar ? (
-        /* Collapsed = height 0 (invisible); the gesture reveals it. The clip
-           goes in a no-padding container: any padding would impose a
-           minimum height and show a sliver. */
         <Animated.View style={[styles.searchClip, { height: searchH }]}>
         <View style={styles.searchRow}>
           <View style={styles.searchBox}>
@@ -1077,19 +1073,9 @@ export function TrackListView({
         </View>
         </Animated.View>
       ) : null}
-      {/* While searching, the large header is hidden: results stay flush
-          with the bar, which is what Spotify does. It is also what the
-          button's place is measured against, and not the wrapper: the
-          search row above it is not scroll, and its height travels with
-          the button on its own (see `searchShift`). */}
       {searching ? null : (
     <View ref={headerRootRef} style={styles.header}>
       {wideCover ? (
-        /* Paint above the first pixel: the pull-down bounce reveals
-           whatever sits above the content - the page background by
-           default - and on the radio that strip must stay the accent,
-           the cover's own colour. Zero net layout: it hangs off the top
-           of the header, off screen until a pull uncovers it. */
         <View
           pointerEvents="none"
           style={{
@@ -1102,43 +1088,17 @@ export function TrackListView({
         />
       ) : null}
       {wideCover ? (
-        /* The picture at the very top, pulled out of the rows' inset to
-           the edges of the display: it fades with the scroll the way
-           the square one does, and the bar rides over it. */
-        <Animated.View
-          style={[
-            styles.wideCover,
-            {
-              width: screenW,
-              height: wideH,
-              opacity: coverOpacity,
-              marginHorizontal: -centredPadding(screenW, spacing.lg),
-            },
-          ]}
-        >
-          {onCoverPress ? (
-            <Pressable
-              onPress={onCoverPress}
-              accessibilityRole="imagebutton"
-              accessibilityLabel={t('View cover')}
-            >
-              {wideCover.render(screenW, wideH, wideVisible)}
-            </Pressable>
-          ) : (
-            wideCover.render(screenW, wideH, wideVisible)
-          )}
-        </Animated.View>
-      ) : hideCover ? null : (
-        <Animated.View style={[styles.coverCenter, { opacity: coverOpacity }]}>
-          {/* Android draws no shadow from a transparent view's content
-              the way iOS does: there it is a box shadow the size and
-              shape of the cover. */}
-          <View
-            style={
-              Platform.OS === 'android'
-                ? { borderRadius: artRadius, boxShadow: '0px 10px 32px rgba(0, 0, 0, 0.45)' }
-                : null
-            }
+        <>
+          <Animated.View
+            style={[
+              styles.wideCover,
+              {
+                width: screenW,
+                height: wideH,
+                opacity: coverOpacity,
+                marginHorizontal: -centredPadding(screenW, spacing.lg),
+              },
+            ]}
           >
             {onCoverPress ? (
               <Pressable
@@ -1146,38 +1106,95 @@ export function TrackListView({
                 accessibilityRole="imagebutton"
                 accessibilityLabel={t('View cover')}
               >
-                {renderCover ? renderCover(art) : <Cover uri={coverUri} size={art} />}
+                {wideCover.render(screenW, wideH, wideVisible)}
               </Pressable>
-            ) : renderCover ? (
-              renderCover(art)
             ) : (
-              <Cover uri={coverUri} size={art} />
+              wideCover.render(screenW, wideH, wideVisible)
             )}
-          </View>
-        </Animated.View>
-      )}
-      <Text style={styles.title} numberOfLines={2}>
-        {title}
-      </Text>
-      {subtitle ? (
-        onSubtitlePress ? (
-          <Pressable hitSlop={6} style={styles.subtitleRow} onPress={onSubtitlePress}>
-            {artistImageUri ? (
-              <View style={styles.artistPhoto}>
-                <Cover uri={artistImageUri} size={24} />
+          </Animated.View>
+          <Text style={styles.title} numberOfLines={2}>
+            {title}
+          </Text>
+          {subtitle ? (
+            onSubtitlePress ? (
+              <Pressable hitSlop={6} style={styles.subtitleRow} onPress={onSubtitlePress}>
+                {artistImageUri ? (
+                  <View style={styles.artistPhoto}>
+                    <Cover uri={artistImageUri} size={22} />
+                  </View>
+                ) : null}
+                <Text style={[styles.subtitle, styles.subtitleLink]}>{subtitle}</Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            )
+          ) : null}
+        </>
+      ) : (
+        /* Reference player side-by-side hero header: rounded cover on left, title & artist on right */
+        <View style={styles.heroRow}>
+          {hideCover ? null : (
+            <Animated.View style={[styles.coverSide, { opacity: coverOpacity }]}>
+              <View
+                style={
+                  Platform.OS === 'android'
+                    ? { borderRadius: artRadius, boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.42)' }
+                    : null
+                }
+              >
+                {onCoverPress ? (
+                  <Pressable
+                    onPress={onCoverPress}
+                    accessibilityRole="imagebutton"
+                    accessibilityLabel={t('View cover')}
+                  >
+                    {renderCover ? renderCover(art) : <Cover uri={coverUri} size={art} />}
+                  </Pressable>
+                ) : renderCover ? (
+                  renderCover(art)
+                ) : (
+                  <Cover uri={coverUri} size={art} />
+                )}
+              </View>
+            </Animated.View>
+          )}
+          <View style={styles.heroInfo}>
+            <Text style={styles.title} numberOfLines={2}>
+              {title}
+            </Text>
+            {subtitle ? (
+              onSubtitlePress ? (
+                <Pressable hitSlop={6} style={styles.subtitleRow} onPress={onSubtitlePress}>
+                  {artistImageUri ? (
+                    <View style={styles.artistPhoto}>
+                      <Cover uri={artistImageUri} size={20} />
+                    </View>
+                  ) : null}
+                  <Text style={[styles.subtitle, styles.subtitleLink]} numberOfLines={1}>
+                    {subtitle}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {subtitle}
+                </Text>
+              )
+            ) : null}
+            {showExplicit || meta ? (
+              <View style={styles.metaRow}>
+                {showExplicit ? <ExplicitBadge status="explicit" /> : null}
+                {meta ? (
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {meta}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
-            <Text style={[styles.subtitle, styles.subtitleLink]}>{subtitle}</Text>
-          </Pressable>
-        ) : (
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        )
-      ) : null}
+          </View>
+        </View>
+      )}
       {description?.trim() ? (
         <View>
-          {/* The whole text, drawn invisibly: with `numberOfLines` set,
-              onTextLayout only reports the lines that survived, so the
-              copy below can't tell whether anything was cut. */}
           <Text
             style={styles.descriptionMeasure}
             onTextLayout={(e) =>
@@ -1206,16 +1223,12 @@ export function TrackListView({
           ) : null}
         </View>
       ) : null}
-      {showExplicit || meta ? (
+      {wideCover && (showExplicit || meta) ? (
         <View style={styles.metaRow}>
           {showExplicit ? <ExplicitBadge status="explicit" /> : null}
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
         </View>
       ) : null}
-      {/* Deliberately quiet: same weight as the metadata line above, so
-          it reads as one more piece of album info and not as a control.
-          Horizontal because an album with eight tags shouldn't push the
-          play button down the screen. */}
       {genres && genres.length > 0 ? (
         <ScrollView
           horizontal
@@ -1241,7 +1254,7 @@ export function TrackListView({
               type={favorite.type}
               starred={favorite.starred}
               podcast={favorite.podcast ? { kind: 'channel', channelId: favorite.id } : undefined}
-              size={28}
+              size={24}
             />
           ) : null}
           {download ? (
@@ -1266,9 +1279,9 @@ export function TrackListView({
                   name={
                     download.status === 'done'
                       ? 'arrow-down-circle'
-                      : 'arrow-down-circle-outline'
+                      : 'download-outline'
                   }
-                  size={26}
+                  size={23}
                   color={download.status === 'done' ? colors.accent : colors.textSecondary}
                 />
               )}
@@ -1281,7 +1294,7 @@ export function TrackListView({
               accessibilityLabel={t('Sort')}
               onPress={onSort}
             >
-              <Icon name="swap-vertical" size={24} color={colors.textSecondary} />
+              <Icon name="swap-vertical" size={22} color={colors.textSecondary} />
             </Pressable>
           ) : null}
           {onMenu ? (
@@ -1291,12 +1304,17 @@ export function TrackListView({
               accessibilityLabel={t('More options')}
               onPress={onMenu}
             >
-              <Icon name="ellipsis-horizontal" size={26} color={colors.textSecondary} />
+              <Icon name="ellipsis-vertical" size={22} color={colors.textSecondary} />
             </Pressable>
           ) : null}
         </View>
   
         <View style={styles.actionsRight}>
+          {meta ? (
+            <Text style={styles.playsMeta} numberOfLines={1}>
+              {meta}
+            </Text>
+          ) : null}
           <Pressable
             hitSlop={10}
             accessibilityRole="button"
@@ -1305,14 +1323,10 @@ export function TrackListView({
           >
             <Icon
               name="shuffle"
-              size={26}
+              size={22}
               color={shuffleActive ? colors.accent : colors.textSecondary}
             />
           </Pressable>
-          {/* The button while it is still in the header: drawn here so
-              it moves with the list, overscroll included, and taking the
-              taps from there down - a dragger that starts on it is the
-              list's, as it always was. */}
           <Pressable
             ref={playBtnRef}
             style={styles.playSlot}
@@ -1325,13 +1339,15 @@ export function TrackListView({
             accessibilityLabel={t('Play')}
             onPress={() => songs.length > 0 && onPlay(0)}
           >
-            <Animated.View
-              style={[
-                styles.playButton,
-                { backgroundColor: colors.accent, opacity: slotOpacity },
-              ]}
-            >
-              <Icon name="play" size={28} color={colors.onAccent} />
+            <Animated.View style={{ opacity: slotOpacity }}>
+              <LinearGradient
+                colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+                start={{ x: 0.15, y: 0.1 }}
+                end={{ x: 0.85, y: 0.9 }}
+                style={styles.playButton}
+              >
+                <Icon name="play" size={20} color="#FFFFFF" style={{ paddingRight: 2 }} />
+              </LinearGradient>
             </Animated.View>
           </Pressable>
         </View>
@@ -1590,15 +1606,9 @@ export function TrackListView({
 
       {/* Fixed top bar: the background and title appear on collapse. In
           selection mode it's replaced by ✕ + counter + select all. */}
-      <View style={[styles.bar, { height: insets.top + TOPBAR_H, paddingTop: insets.top }]}>
+      <View style={[styles.bar, { height: insets.top + TOPBAR_H, paddingTop: insets.top, paddingHorizontal: centredPadding(screenW, spacing.lg) }]}>
         {selecting ? (
           <>
-            {/* The bar of a selection keeps the header's colour at every
-                scroll: what changes is what it says, not the bar. The
-                header's own title scrolls behind it and is hidden here, so
-                the bar never thins over the list under it - and it is laid
-                flat rather than the one above pinned opaque, which is a
-                style an animation has nothing to hold (see `TopBarPaint`). */}
             <TopBarPaint color={headerColor} />
             <Pressable
               hitSlop={12}
@@ -1629,7 +1639,7 @@ export function TrackListView({
         ) : (
           <>
             <TopBarBackground color={headerColor} opacity={barBgOpacity} />
-            <BackChevron size={28} label={t('Close')} />
+            <BackChevron size={26} label={t('Close')} />
             <Animated.Text
               style={[
                 styles.barTitleCentered,
@@ -1645,21 +1655,26 @@ export function TrackListView({
             >
               {title}
             </Animated.Text>
+            {onMenu && !overBar ? (
+              <Pressable
+                hitSlop={10}
+                style={{ marginLeft: 'auto' }}
+                accessibilityRole="button"
+                accessibilityLabel={t('More options')}
+                onPress={onMenu}
+              >
+                <Icon name="share-social-outline" size={21} color={colors.text} />
+              </Pressable>
+            ) : null}
           </>
         )}
       </View>
 
-      {/* Over the bar everywhere else: outside a selection this is the copy of
-          the button that belongs to the bar, held at its line, so it has to be
-          in front of it; a selection draws its travelling copy above the bar
-          instead (above). */}
       {selecting ? null : playOverlay}
 
       {selecting ? (
         <SelectionBar
           count={selectedIds.size}
-          // Taking songs out of this list where that is a thing, and downloading
-          //  where it isn't. Whichever one loses the slot is the one behind ⋯.
           actions={[
             ...addToAction,
             ...(removeAction.length > 0 ? removeAction : downloadAction),
@@ -1711,8 +1726,6 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    // The gap to the cover goes inside the animated height: this way it
-    // collapses along with the bar (an external margin would always be visible).
     paddingBottom: spacing.md,
   },
   searchBox: {
@@ -1720,9 +1733,7 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    // Translucent to let the header's dominant color through (Spotify).
     backgroundColor: colors.highlight,
-    // A capsule with Round, a rounded rectangle with Pointier.
     borderRadius: restyled(radius.pill, radius.md),
     paddingHorizontal: spacing.lg,
     height: 44,
@@ -1775,64 +1786,73 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
   },
   header: {
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     gap: spacing.xs,
+  },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  coverSide: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.42,
+    shadowRadius: 14,
+  },
+  heroInfo: {
+    flex: 1,
+    justifyContent: 'center',
   },
   coverCenter: {
     alignItems: 'center',
     marginBottom: spacing.lg,
-    // The big cover sits on the page rather than being printed on it: a soft
-    // shadow under it and to the sides, less over the top. The offset is what
-    // puts the weight at the bottom, and the radius what softens it - one
-    // shadow, both edges handled. It fades out with the cover it belongs to.
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.45,
     shadowRadius: 16,
   },
   wideCover: {
-    // No corners and no shadow: the picture is printed into the page itself,
-    // from the very top edge, and the rows below come back into their inset.
     overflow: 'hidden',
     marginBottom: spacing.lg,
   },
   title: {
     color: colors.text,
-    fontSize: fontSize.xxl,
-    letterSpacing: tracking.display,
-    fontWeight: '500',
+    fontSize: 22,
+    letterSpacing: tracking.title,
+    fontWeight: '700',
+    lineHeight: 27,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: fontSize.md,
-    marginTop: spacing.xs,
+    fontSize: fontSize.sm,
+    marginTop: 6,
   },
   subtitleLink: {
-    color: colors.text,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: spacing.sm,
+    gap: spacing.xs,
+    marginTop: 4,
   },
   artistPhoto: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: radius.pill,
     overflow: 'hidden',
   },
-  // Same weight and colour as the metadata under it: what the playlist says
-  // about itself belongs with the rest of what it says, not above it as a
-  // second title.
   description: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
     marginTop: spacing.xs,
     lineHeight: 20,
   },
-  // Same text, same width, no paint: only here to count the lines.
   descriptionMeasure: {
     position: 'absolute',
     opacity: 0,
@@ -1842,8 +1862,6 @@ const styles = themed((colors) => ({
     fontSize: fontSize.sm,
     lineHeight: 20,
   },
-  // Under the text, never over it: the header sits on the dominant color
-  // gradient, so a patch of the plain background would show as a rectangle.
   descriptionMore: {
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
@@ -1853,20 +1871,22 @@ const styles = themed((colors) => ({
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
-  // The row keeps the gap the line used to keep for itself, so a header with
-  // no badge sits exactly where it always did.
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: spacing.xs,
+    marginTop: 3,
   },
   meta: {
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
     flexShrink: 1,
   },
-  // `flexGrow: 0` or the row would stretch to fill the header column.
+  playsMeta: {
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: '500',
+  },
   genres: { flexGrow: 0, marginTop: spacing.sm },
   genresContent: { gap: spacing.sm, paddingRight: spacing.lg },
   genreChip: {
@@ -1880,7 +1900,8 @@ const styles = themed((colors) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
+    paddingBottom: spacing.xs,
   },
   actionsLeft: {
     flexDirection: 'row',
@@ -1901,23 +1922,24 @@ const styles = themed((colors) => ({
   actionsRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   playButton: {
-    backgroundColor: colors.accent,
     width: PLAY_SIZE,
     height: PLAY_SIZE,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.accentGradientEnd,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  // The place the button takes in the header.
   playSlot: {
     width: PLAY_SIZE,
     height: PLAY_SIZE,
   },
-  // The button over the bar: only the column's `right` comes with each
-  // render; the scroll and the search row's height travel in wrappers.
   playDock: {
     position: 'absolute',
   },
@@ -1935,20 +1957,18 @@ const styles = themed((colors) => ({
     flex: 1,
     color: colors.text,
     fontSize: fontSize.md,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   barTitleCentered: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     justifyContent: 'center',
-    // Both ends come with each render (they need the screen's width): the same
-    // clearance either side is what puts the name in the middle of the screen.
     textAlign: 'center',
     includeFontPadding: false,
     color: colors.text,
     fontSize: fontSize.md,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 }));
 

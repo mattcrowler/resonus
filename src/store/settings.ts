@@ -33,19 +33,19 @@ import { profileScopeId, useAuthStore } from './auth';
 // excessively when it sees any `.value` inside an inline style, even if it's
 // not a shared value. Using `color` avoids that false positive in the Theme
 // picker.
-/** Selectable accent colors (same vibrant palette; green by default). */
+/** Selectable accent colors (coral-pink by default, inspired by reference player). */
 export const ACCENT_OPTIONS: { name: string; color: string }[] = [
-  // Sorted by hue (rainbow), with the default green first.
-  { name: 'Green', color: DEFAULT_ACCENT },
+  // Default coral-pink first, followed by the rainbow spectrum.
+  { name: 'Pink', color: DEFAULT_ACCENT },
+  { name: 'Green', color: '#1DB954' },
   { name: 'Teal', color: '#1FC7B6' },
   { name: 'Cyan', color: '#2CC4E0' },
   { name: 'Blue', color: '#4E9BF5' },
   { name: 'Indigo', color: '#6C79F5' },
   { name: 'Purple', color: '#A66CFF' },
   { name: 'Magenta', color: '#D65AE0' },
-  { name: 'Pink', color: '#F25D94' },
   { name: 'Red', color: '#F2555A' },
-  { name: 'Orange', color: '#F58C3C' },
+  { name: 'Orange', color: '#FF9A62' },
   { name: 'Yellow', color: '#F5C53C' },
   { name: 'Lime', color: '#A6D93C' },
   // After the rainbow, having no hue: a silver with the same touch of blue as

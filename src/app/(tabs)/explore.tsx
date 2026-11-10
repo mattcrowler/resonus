@@ -47,13 +47,14 @@ import { RadioBrowser } from '@/app/radio';
 import { PodcastsBrowser } from '@/app/podcasts';
 import { FoldersBrowser } from '@/components/FoldersBrowser';
 import { PlaylistsBrowser } from '@/components/PlaylistsBrowser';
+import { AmbientGlow } from '@/components/AmbientGlow';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { useAccent } from '@/hooks/useAccent';
 import { useT } from '@/i18n';
 import { useAuthStore } from '@/store/auth';
 import { anyDownloads, useDownloads } from '@/store/downloads';
 import { useSettings, type ExploreSectionKey, type ListLayout } from '@/store/settings';
-import { colors, fontSize, radius, spacing, themed, useTheme, tracking } from '@/theme';
+import { colors, fontSize, radius, spacing, themed, useTheme } from '@/theme';
 
 type Section = Exclude<ExploreSectionKey, 'downloaded'>;
 
@@ -216,6 +217,7 @@ export default function ExploreScreen() {
 
   return (
     <View style={[styles.safe, { paddingTop: insets.top }]}>
+      <AmbientGlow height={280} />
       <View style={styles.header}>
         <Text style={styles.heading}>{t('Explore')}</Text>
         <View style={styles.headerActions}>
@@ -363,7 +365,7 @@ const styles = themed((colors) => ({
   },
   // The same heading "Your library" has, since they are the two halves of one
   // idea and a different size would read as a different kind of screen.
-  heading: { color: colors.text, fontSize: fontSize.xxl, letterSpacing: tracking.display, fontWeight: '400' },
+  heading: { color: colors.text, fontSize: fontSize.xl, letterSpacing: 1.4, fontWeight: '700', textTransform: 'uppercase' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   segments: { flexGrow: 0, paddingBottom: spacing.md },
   segmentsContent: { gap: spacing.sm, paddingHorizontal: spacing.lg },

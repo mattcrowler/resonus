@@ -11,7 +11,7 @@ import { useAuthStore } from '@/store/auth';
 import { usePins } from '@/store/pins';
 import { useToast } from '@/store/toast';
 import { useT } from '@/i18n';
-import { colors } from '@/theme';
+import { colors, useTheme } from '@/theme';
 
 interface Props {
   id: string;
@@ -42,6 +42,7 @@ interface Props {
 }
 
 export function FavoriteButton({ id, type = 'song', starred, size = 22, undo, podcast, hold: onHold }: Props) {
+  useTheme();
   const auth = useAuthStore((s) => s.auth);
   const offline = useAuthStore((s) => s.offline);
   const t = useT();
@@ -136,7 +137,7 @@ export function FavoriteButton({ id, type = 'song', starred, size = 22, undo, po
       <Icon
         name={fav ? 'heart' : 'heart-outline'}
         size={size}
-        color={fav ? colors.accent : colors.textSecondary}
+        color={fav ? colors.heart : colors.textSecondary}
       />
     </Pressable>
   );

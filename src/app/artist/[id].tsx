@@ -58,7 +58,7 @@ import { useToast } from '@/store/toast';
 import { colors, fontSize, radius, spacing, themed, useTheme, tracking, transparentOf } from '@/theme';
 import { BackChevron } from '@/components/BackChevron';
 import { useScreenBottomPadding } from '@/hooks/useScreenBottomPadding';
-import { useScreenSize } from '@/hooks/useScreenSize';
+import { centredPadding, useScreenSize } from '@/hooks/useScreenSize';
 
 /**
  * How tall the picture across the top is.
@@ -97,10 +97,10 @@ const CARD_W = 140;
 const ROW_LIMIT = 50;
 
 /**
- * The play button, the same 56 the album and playlist headers use: the copy
+ * The play button, the same 44 the album and playlist headers use: the copy
  * that docks under the bar has to land on the same circle the header lays out.
  */
-const PLAY_SIZE = 56;
+const PLAY_SIZE = 44;
 /** The bar's height below the status bar (the same 48 as every other bar). */
 const BAR_H = 48;
 
@@ -168,6 +168,7 @@ export default function ArtistScreen() {
   // the one the app started with.
   const { width: screenW, height: screenH } = useScreenSize();
   const headerH = headerHeight(screenW, screenH);
+  const listPad = centredPadding(screenW, spacing.lg);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   // The bar reaching the docked play button hands the taps (and the screen
@@ -470,7 +471,7 @@ export default function ArtistScreen() {
     <ActivityIndicator size="small" color={colors.onAccent} />
   ) : (
     // Optical centring only for the play triangle; pause is symmetric.
-    <Icon name={showPause ? 'pause' : 'play'} size={28} color={colors.onAccent} />
+    <Icon name={showPause ? 'pause' : 'play'} size={24} color={colors.onAccent} />
   );
 
   // The play button over the bar. It follows the place laid out for it in the
@@ -485,16 +486,22 @@ export default function ArtistScreen() {
       importantForAccessibility={overBar ? 'auto' : 'no-hide-descendants'}
       style={[
         styles.playDock,
-        { right: spacing.lg, opacity: dockOpacity, transform: [{ translateY: playDockY }] },
+        { right: listPad, opacity: dockOpacity, transform: [{ translateY: playDockY }] },
       ]}
     >
       <Pressable
-        style={styles.playButton}
         accessibilityRole="button"
         accessibilityLabel={showPause ? t('Pause') : t('Play')}
         onPress={onPressPlay}
       >
-        {playGlyph}
+        <LinearGradient
+          colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.playButton}
+        >
+          {playGlyph}
+        </LinearGradient>
       </Pressable>
     </Animated.View>
   );
@@ -548,19 +555,19 @@ export default function ArtistScreen() {
           />
           <Animated.Text
             pointerEvents="none"
-            style={[styles.name, { opacity: nameOpacity }]}
+            style={[styles.name, { opacity: nameOpacity, paddingHorizontal: listPad }]}
             numberOfLines={2}
           >
             {data.artist.name}
           </Animated.Text>
         </View>
 
-        <View style={styles.actions}>
+        <View style={[styles.actions, { paddingHorizontal: listPad }]}>
           <FavoriteButton
             id={data.artist.id}
             type="artist"
             starred={favArtistIds ? favArtistIds.has(data.artist.id) : !!data.artist.starred}
-            size={30}
+            size={24}
           />
           {/* Locally no: what's here is already on the device. Same criteria
               (and same look) as the album and playlist header. */}
@@ -584,7 +591,7 @@ export default function ArtistScreen() {
                   ) : null}
                 </>
               ) : (
-                <Icon name="arrow-down-circle-outline" size={26} color={colors.textSecondary} />
+                <Icon name="download-outline" size={22} color={colors.textSecondary} />
               )}
             </Pressable>
           ) : null}
@@ -600,7 +607,7 @@ export default function ArtistScreen() {
                 menuRef.current();
               }}
             >
-              <Icon name="ellipsis-horizontal" size={26} color={colors.text} />
+              <Icon name="ellipsis-vertical" size={22} color={colors.textSecondary} />
             </Pressable>
           ) : null}
           <View style={{ flex: 1 }} />
@@ -614,7 +621,7 @@ export default function ArtistScreen() {
             {shuffling ? (
               <ActivityIndicator size="small" color={colors.text} />
             ) : (
-              <Icon name="shuffle" size={26} color={shuffleActive ? colors.accent : colors.text} />
+              <Icon name="shuffle" size={22} color={shuffleActive ? colors.accent : colors.textSecondary} />
             )}
           </Pressable>
           {/* What the button does while it is still in the header: laid out
@@ -630,8 +637,15 @@ export default function ArtistScreen() {
             accessibilityLabel={showPause ? t('Pause') : t('Play')}
             onPress={onPressPlay}
           >
-            <Animated.View style={[styles.playButton, { opacity: slotOpacity }]}>
-              {playGlyph}
+            <Animated.View style={{ opacity: slotOpacity }}>
+              <LinearGradient
+                colors={[colors.accentGradientStart, colors.accentGradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.playButton}
+              >
+                {playGlyph}
+              </LinearGradient>
             </Animated.View>
           </Pressable>
         </View>
@@ -643,14 +657,14 @@ export default function ArtistScreen() {
                 is every song there is. "Show all" beside "Popular" would read
                 as all the popular ones. */}
             <Link href={`/artist/songs/${id}`} asChild>
-              <Pressable style={styles.sectionHeader}>
+              <Pressable style={[styles.sectionHeader, { paddingHorizontal: listPad }]}>
                 <Text style={styles.sectionHeaderTitle}>{t('Popular')}</Text>
                 <Text style={styles.showAll}>{t('All songs')}</Text>
               </Pressable>
             </Link>
             {/* Same horizontal margin as the lists (album/playlist) so the
                 rows —and the three-dot button— don't stick to the edge. */}
-            <View style={styles.popularRows}>
+            <View style={[styles.popularRows, { paddingHorizontal: listPad }]}>
               {top.slice(0, songsExpanded ? 10 : 5).map((song, i) => (
                 <TrackRow
                   key={song.id}
@@ -747,7 +761,7 @@ export default function ArtistScreen() {
       </View>
 
       {/* Fixed bar: the back button always; background + title on collapse. */}
-      <View style={[styles.bar, { height: insets.top + BAR_H, paddingTop: insets.top }]}>
+      <View style={[styles.bar, { height: insets.top + BAR_H, paddingTop: insets.top, paddingHorizontal: listPad }]}>
         <TopBarBackground color={dominant} opacity={barBgOpacity} />
         {/* The same chevron, at the same size, as the album and playlist bars.
             What it keeps of its own is the disc behind it: those screens open
@@ -988,7 +1002,7 @@ const styles = themed((colors) => ({
     color: colors.text,
     fontSize: fontSize.xxl,
     letterSpacing: tracking.display,
-    fontWeight: '500',
+    fontWeight: '700',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
@@ -1010,12 +1024,16 @@ const styles = themed((colors) => ({
     fontWeight: '500',
   },
   playButton: {
-    backgroundColor: colors.accent,
     width: PLAY_SIZE,
     height: PLAY_SIZE,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
   },
   // The place the button takes in the actions row.
   playSlot: {
@@ -1037,13 +1055,20 @@ const styles = themed((colors) => ({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  sectionHeaderTitle: { color: colors.text, fontSize: fontSize.lg, letterSpacing: tracking.heading, fontWeight: '500' },
+  sectionHeaderTitle: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   showAll: { color: colors.textSecondary, fontSize: fontSize.sm, fontWeight: '500' },
   sectionTitle: {
     color: colors.text,
-    fontSize: fontSize.lg,
-    letterSpacing: tracking.heading,
-    fontWeight: '500',
+    fontSize: fontSize.sm,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -1065,7 +1090,7 @@ const styles = themed((colors) => ({
   similarName: {
     color: colors.text,
     fontSize: fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '700',
     textAlign: 'center',
   },
   back: {
@@ -1090,6 +1115,6 @@ const styles = themed((colors) => ({
     flex: 1,
     color: colors.text,
     fontSize: fontSize.md,
-    fontWeight: '500',
+    fontWeight: '700',
   },
 }));

@@ -67,7 +67,7 @@ const styles = themed((colors) => ({
     color: colors.text,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
-    fontWeight: '500',
+    fontWeight: '700',
     marginTop: spacing.xs,
   },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

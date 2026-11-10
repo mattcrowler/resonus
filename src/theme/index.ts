@@ -23,8 +23,8 @@ import { useSyncExternalStore } from 'react';
 import { Appearance, AppState, Platform } from 'react-native';
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
-/** Default accent (Spotify green). */
-export const DEFAULT_ACCENT = '#1DB954';
+/** Default accent (Warm Coral-Pink from reference player). */
+export const DEFAULT_ACCENT = '#F25781';
 
 /** The two appearances. Dark is what the app has always looked like. */
 export type ThemeMode = 'dark' | 'light';
@@ -81,6 +81,16 @@ export interface Palette {
    * light theme's darkened accent would be the one that cannot be read.
    */
   accentVivid: string;
+  /** Warm start stop for gradient buttons and progress bars (amber/peach). */
+  accentGradientStart: string;
+  /** Vibrant end stop for gradient buttons and progress bars (coral/pink). */
+  accentGradientEnd: string;
+  /** Vibrant rose-pink used for liked/favorited heart icons. */
+  heart: string;
+  /** Top ambient glow primary color. */
+  ambientGlowTop: string;
+  /** Mid ambient glow secondary color. */
+  ambientGlowMid: string;
   /**
    * The app's own green, independent of whatever accent is picked. The login
    * screen uses it, because there the accent may still be the one belonging to
@@ -162,36 +172,45 @@ export interface Palette {
 /** The colours each appearance sets; the accent-derived ones come from `rebuild`. */
 type BasePalette = Omit<
   Palette,
-  'accent' | 'accentPressed' | 'accentVivid' | 'onAccent' | 'brand'
+  | 'accent'
+  | 'accentPressed'
+  | 'accentVivid'
+  | 'accentGradientStart'
+  | 'accentGradientEnd'
+  | 'onAccent'
+  | 'brand'
 >;
 
-/** The dark appearance, on greys with a touch of blue: a neutral grey reads flat. */
+/** The dark appearance, on deep midnight navy with warm ambient glow support. */
 const DARK: BasePalette = {
-  background: '#141619',
-  surface: '#1E2026',
-  surfaceHighlight: '#2A2C33',
-  border: '#2B2D34',
-  text: '#FFFFFF',
-  textSecondary: '#A0A3AB',
-  textMuted: '#72757D',
-  textTime: '#DDE0E6',
+  background: '#121420',
+  surface: '#1A1D2E',
+  surfaceHighlight: '#25293E',
+  border: '#2B2F47',
+  text: '#F5F6FA',
+  textSecondary: '#8E93AD',
+  textMuted: '#5E637E',
+  textTime: '#D5D8E8',
+  heart: '#F24978',
+  ambientGlowTop: 'rgba(218, 132, 84, 0.34)',
+  ambientGlowMid: 'rgba(156, 62, 104, 0.15)',
   onInverse: '#000000',
-  snackbar: '#30323A',
+  snackbar: '#282C42',
   onSnackbar: '#FFFFFF',
-  backdrop: 'rgba(0,0,0,0.5)',
-  backdropStrong: 'rgba(0,0,0,0.6)',
-  scrim: 'rgba(0,0,0,0.45)',
+  backdrop: 'rgba(8, 9, 16, 0.6)',
+  backdropStrong: 'rgba(8, 9, 16, 0.72)',
+  scrim: 'rgba(10, 12, 20, 0.48)',
   onArtwork: '#FFFFFF',
-  veil: 'rgba(20,22,25,0.6)',
-  highlight: 'rgba(255,255,255,0.14)',
-  coverWash: 'rgba(0,0,0,0.42)',
+  veil: 'rgba(18, 20, 32, 0.6)',
+  highlight: 'rgba(255, 255, 255, 0.12)',
+  coverWash: 'rgba(14, 16, 26, 0.46)',
   // Replaced by the background of the shade in force (see `rebuild`).
-  playerPlain: '#3a4042',
-  mediaTrack: 'rgba(255,255,255,0.35)',
-  control: '#2B2D34',
+  playerPlain: '#121420',
+  mediaTrack: 'rgba(255, 255, 255, 0.22)',
+  control: '#2B2F47',
   knob: '#FFFFFF',
   shadow: '#000000',
-  danger: '#E03131',
+  danger: '#F04452',
   success: '#2F9E44',
 };
 
@@ -226,15 +245,15 @@ type TintGreys = Pick<
 export const BACKGROUND_TINTS: Record<BackgroundTint, { dark: TintGreys; light: TintGreys }> = {
   blue: {
     dark: {
-      background: '#141619',
-      surface: '#1E2026',
-      surfaceHighlight: '#2A2C33',
-      border: '#2B2D34',
-      control: '#2B2D34',
-      snackbar: '#30323A',
-      veil: 'rgba(20,22,25,0.6)',
-      textSecondary: '#A0A3AB',
-      textMuted: '#72757D',
+      background: '#121420',
+      surface: '#1A1D2E',
+      surfaceHighlight: '#25293E',
+      border: '#2B2F47',
+      control: '#2B2F47',
+      snackbar: '#282C42',
+      veil: 'rgba(18, 20, 32, 0.6)',
+      textSecondary: '#8E93AD',
+      textMuted: '#5E637E',
     },
     // The default light look as it was: a white page, cards a hair blue.
     light: {
@@ -453,6 +472,9 @@ const LIGHT: BasePalette = {
   textSecondary: '#5C5C66',
   textMuted: '#84848F',
   textTime: '#6E6E78',
+  heart: '#E63968',
+  ambientGlowTop: 'rgba(242, 87, 129, 0.14)',
+  ambientGlowMid: 'rgba(255, 154, 98, 0.06)',
   onInverse: '#FFFFFF',
   snackbar: '#303036',
   onSnackbar: '#FFFFFF',
@@ -546,6 +568,21 @@ function readableOn(hex: string, bg: string, ratio = 4.5): string {
   return out;
 }
 
+/** Derives warm gradient stops from an accent color (coral-amber for default). */
+export function gradientStopsFor(accentHex: string): [string, string] {
+  if (accentHex.toUpperCase() === DEFAULT_ACCENT.toUpperCase()) {
+    return ['#FF9A62', '#EE4979'];
+  }
+  const ch = channels(accentHex);
+  if (!ch) return ['#FF9A62', accentHex];
+  const warmStart = toHex(
+    Math.min(255, ch[0] + 38),
+    Math.min(255, ch[1] + 52),
+    Math.max(0, ch[2] - 24),
+  );
+  return [warmStart, accentHex];
+}
+
 /**
  * The live palette. Rewritten in place by `rebuild` so that anything holding
  * a reference to it — including code outside React — always reads the current
@@ -556,8 +593,10 @@ export const colors: Palette = {
   accent: DEFAULT_ACCENT,
   accentPressed: darken(DEFAULT_ACCENT),
   accentVivid: DEFAULT_ACCENT,
+  accentGradientStart: '#FF9A62',
+  accentGradientEnd: '#EE4979',
   brand: DEFAULT_ACCENT,
-  onAccent: '#000000',
+  onAccent: '#FFFFFF',
 };
 
 let currentMode: ThemeMode = 'dark';
@@ -603,17 +642,20 @@ function rebuild(): void {
   const picked = light ? lightAccent : darkAccent;
   // On white the accent has to be dark enough to read as text; on near-black
   // a palette colour is already fine as picked, and a dark custom one is
-  // lifted. `onAccent` follows from that: black on the vivid accent, white on
-  // the darkened one.
+  // lifted. `onAccent` follows from that: black on very bright accents, white on
+  // coral/vivid or darkened accents.
   const accent = readableOn(picked, light ? LIGHT.background : base.background);
+  const [gradStart, gradEnd] = gradientStopsFor(picked);
   Object.assign(colors, base, {
     // See `playerPlain`: the page itself under the dark appearances.
     playerPlain: light ? base.playerPlain : base.background,
     accent,
     accentPressed: darken(accent),
     accentVivid: picked,
+    accentGradientStart: gradStart,
+    accentGradientEnd: gradEnd,
     brand: light ? readableOn(DEFAULT_ACCENT, LIGHT.background) : DEFAULT_ACCENT,
-    onAccent: light ? '#FFFFFF' : '#000000',
+    onAccent: light ? '#FFFFFF' : luminance(picked) > 0.45 ? '#000000' : '#FFFFFF',
   });
   version += 1;
   for (const listener of listeners) listener();

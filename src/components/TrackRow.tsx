@@ -645,26 +645,20 @@ const styles = themed((colors) => ({
     backgroundColor: colors.accent,
   },
   position: {
-    color: colors.textMuted,
-    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
     textAlign: 'center',
   },
   leftSlot: {
-    // Three digits' worth. A hundred-track compilation is a real thing, and at
-    // 24 the number wrapped: "100" came out as a 10 with a 0 under it, and the
-    // row grew a line to hold it. The width is generous on purpose, since the
-    // font is the reader's to choose and some are wider than others.
-    width: 30,
+    width: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Separates the three-dot icon from the right edge and expands the touch area
-  // (Spotify style): the vertical padding makes almost the entire row height
-  // on that side tappable, so it's much easier to hit with a finger.
   menuButton: {
-    paddingLeft: spacing.md,
-    paddingRight: spacing.md,
-    paddingVertical: spacing.md,
+    paddingLeft: spacing.xs,
+    paddingRight: 0,
+    paddingVertical: spacing.sm,
   },
   artwork: {
     width: 48,
@@ -683,9 +677,16 @@ const styles = themed((colors) => ({
   info: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   title: {
     color: colors.text,
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   subRow: {
     flexDirection: 'row',
