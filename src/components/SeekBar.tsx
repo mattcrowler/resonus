@@ -154,7 +154,7 @@ const styles = themed((colors) => ({
     borderRadius: 3,
   },
   slider: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     marginHorizontal: Platform.OS === 'android' ? -14 : 0,
     opacity: 0.01,
   },

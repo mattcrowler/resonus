@@ -1572,7 +1572,7 @@ export default function PlayerScreen() {
               <Icon
                 name="volume-medium-outline"
                 size={22}
-                color={casting ? colors.accent : colors.textSecondary}
+                color={remoteDevice ? colors.accent : colors.textSecondary}
               />
             </Pressable>
           </View>
